@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>islands (multiplayer soon!!)</title>
+<style>
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 20px; }
+  table { border-collapse: collapse; }
+  td {
+    width: 60px; height: 60px;
+    border: 1px solid black;
+    text-align: center;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  td.red { background-color: lightcoral; }
+  td.blue { background-color: lightblue; }
+</style>
+</head>
+<body>
+<h1>islands (multiplayer soon!!)</h1>
+<table id="board"></table>
+<p id="status">current player: red | red islands: 0 | blue islands: 0</p>
+
+<script>
+const size = 6;
+let board = Array(size).fill(null).map(() => Array(size).fill(''));
+let currentPlayer = 'red';
+
+const table = document.getElementById('board');
+
+function createBoard() {
+  table.innerHTML = '';
+  for (let i = 0; i < size; i++) {
+    let row = table.insertRow();
+    for (let j = 0; j < size; j++) {
+      let cell = row.insertCell();
+      cell.className = board[i][j];
+      cell.addEventListener('click', () => makeMove(i,j));
+      cell.textContent = '';
+    }
+  }
+  updateStatus();
+}
+
+function countIslands(player) {
+  return board.flat().filter(c => c === player).length;
+}
+
+function isValidMove(i,j) {
+  if (board[i][j] !== '') return false;
+
+  // First move: anywhere
+  if (!board.flat().some(x => x === currentPlayer)) return true;
+
+  // Must be adjacent to your existing squares
+  const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
+  return dirs.some(([di,dj]) => {
+    let ni = i + di, nj = j + dj;
+    return ni >=0 && ni<size && nj>=0 && nj<size && board[ni][nj] === currentPlayer;
+  });
+}
+
+function makeMove(i,j) {
+  if (!isValidMove(i,j)) return;
+
+  board[i][j] = currentPlayer;
+  currentPlayer = currentPlayer === 'red' ? 'blue' : 'red';
+
+  createBoard();
+  checkEndGame();
+}
+
+function updateStatus() {
+  const redCount = countIslands('red');
+  const blueCount = countIslands('blue');
+  document.getElementById('status').textContent = 
+    `current player: ${currentPlayer} | red islands: ${redCount} | blue islands: ${blueCount}`;
+}
+
+function checkEndGame() {
+  const movesLeft = board.flat().some((cell, idx) => {
+    let i = Math.floor(idx/size), j = idx%size;
+    return isValidMove(i,j);
+  });
+  if (!movesLeft) {
+    const redCount = countIslands('red');
+    const blueCount = countIslands('blue');
+    document.getElementById('status').textContent =
+      redCount === blueCount ? 
+      `tie! red: ${redCount}, blue: ${blueCount}` :
+      `winner: ${redCount > blueCount ? 'red' : 'blue'} (red: ${redCount}, blue: ${blueCount})`;
+  }
+}
+
+createBoard();
+</script>
+</body>
+</html>
